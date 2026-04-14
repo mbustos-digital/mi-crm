@@ -194,7 +194,8 @@ export default function Cartera() {
   } = useCRM()
 
   // Oportunidades Cerradas Ganadas que todavía NO están en cartera.
-  // Se usan en el empty state para "importar" al primer uso.
+  // Sección permanente: se muestra siempre que haya al menos una pendiente,
+  // independientemente de si Cartera ya tiene clientes o no.
   const importablesGanadas = useMemo(() => {
     const importedRows = new Set(
       (cartera || []).map(c => c.idOrigenPipeline).filter(Boolean)
@@ -249,80 +250,23 @@ export default function Cartera() {
       {/* Capacity bar */}
       <CapacityBar ocupados={ocupados} max={capacidadMaxima} />
 
-      {/* Grid de clientes */}
+      {/* Grid de clientes o empty state */}
       {sortedCartera.length === 0 ? (
-        <div className="space-y-4">
-          <div className="text-center py-12 bg-white rounded-xl border border-slate-100">
-            <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Users size={24} className="text-indigo-500" />
-            </div>
-            <h3 className="text-lg font-semibold text-slate-700 mb-1">Cartera vacía</h3>
-            <p className="text-sm text-slate-500 mb-4">
-              Agrega clientes al ganar oportunidades o manualmente.
-            </p>
-            <button
-              onClick={openNewCliente}
-              className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-4 py-2 text-sm font-medium"
-            >
-              <Plus size={14} />
-              Agregar cliente manual
-            </button>
+        <div className="text-center py-12 bg-white rounded-xl border border-slate-100">
+          <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Users size={24} className="text-indigo-500" />
           </div>
-
-          {/* Importables: oportunidades Cerradas Ganadas sin importar */}
-          {importablesGanadas.length > 0 && (
-            <div className="bg-white rounded-xl border border-emerald-100 overflow-hidden">
-              <div className="px-5 py-4 bg-emerald-50/60 border-b border-emerald-100 flex items-center gap-2">
-                <Sparkles size={16} className="text-emerald-600" />
-                <div>
-                  <h3 className="text-sm font-semibold text-slate-800">
-                    Importar desde oportunidades ganadas
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    {importablesGanadas.length} {importablesGanadas.length === 1 ? 'oportunidad cerrada ganada disponible' : 'oportunidades cerradas ganadas disponibles'} para agregar a cartera
-                  </p>
-                </div>
-              </div>
-              <ul className="divide-y divide-slate-100">
-                {importablesGanadas.map(opp => {
-                  const tipoInfo = TIPO_PROGRAMA_COLORS[opp.tipoPrograma]
-                  return (
-                    <li key={opp.row} className="px-5 py-3 flex items-center gap-3 hover:bg-slate-50/60 transition-colors">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-slate-800 text-sm truncate">{opp.nombre}</span>
-                          {opp.tipoPrograma && (
-                            <span
-                              className="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0"
-                              style={{ backgroundColor: tipoInfo?.bg || '#f1f5f9', color: tipoInfo?.color || '#64748b' }}
-                            >
-                              {opp.tipoPrograma}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-3 text-xs text-slate-500 mt-0.5">
-                          {opp.empresa && <span className="truncate">{opp.empresa}</span>}
-                          {opp.monto > 0 && (
-                            <span className="font-semibold text-emerald-600">
-                              ${Number(opp.monto).toLocaleString('es-MX')}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => openCartPromptForOpp(opp)}
-                        className="flex items-center gap-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shrink-0 transition-colors"
-                      >
-                        Importar
-                        <ArrowRight size={12} />
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
-            </div>
-          )}
+          <h3 className="text-lg font-semibold text-slate-700 mb-1">Cartera vacía</h3>
+          <p className="text-sm text-slate-500 mb-4">
+            Agrega clientes al ganar oportunidades o manualmente.
+          </p>
+          <button
+            onClick={openNewCliente}
+            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-4 py-2 text-sm font-medium"
+          >
+            <Plus size={14} />
+            Agregar cliente manual
+          </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -333,6 +277,62 @@ export default function Cartera() {
               onEdit={openEditCliente}
             />
           ))}
+        </div>
+      )}
+
+      {/* Sección permanente: oportunidades ganadas pendientes de importar.
+          Se muestra siempre que haya al menos una, exista o no cartera. */}
+      {importablesGanadas.length > 0 && (
+        <div className="mt-6 bg-white rounded-xl border border-emerald-100 overflow-hidden">
+          <div className="px-5 py-4 bg-emerald-50/60 border-b border-emerald-100 flex items-center gap-2">
+            <Sparkles size={16} className="text-emerald-600" />
+            <div>
+              <h3 className="text-sm font-semibold text-slate-800">
+                Oportunidades ganadas pendientes de importar
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {importablesGanadas.length} {importablesGanadas.length === 1 ? 'oportunidad cerrada ganada sin agregar' : 'oportunidades cerradas ganadas sin agregar'} a cartera
+              </p>
+            </div>
+          </div>
+          <ul className="divide-y divide-slate-100">
+            {importablesGanadas.map(opp => {
+              const tipoInfo = TIPO_PROGRAMA_COLORS[opp.tipoPrograma]
+              return (
+                <li key={opp.row} className="px-5 py-3 flex items-center gap-3 hover:bg-slate-50/60 transition-colors">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium text-slate-800 text-sm truncate">{opp.nombre}</span>
+                      {opp.tipoPrograma && (
+                        <span
+                          className="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0"
+                          style={{ backgroundColor: tipoInfo?.bg || '#f1f5f9', color: tipoInfo?.color || '#64748b' }}
+                        >
+                          {opp.tipoPrograma}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-slate-500 mt-0.5">
+                      {opp.empresa && <span className="truncate">{opp.empresa}</span>}
+                      {opp.monto > 0 && (
+                        <span className="font-semibold text-emerald-600">
+                          ${Number(opp.monto).toLocaleString('es-MX')}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => openCartPromptForOpp(opp)}
+                    className="flex items-center gap-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shrink-0 transition-colors"
+                  >
+                    Importar
+                    <ArrowRight size={12} />
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
         </div>
       )}
     </div>
