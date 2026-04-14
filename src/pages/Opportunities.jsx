@@ -1,10 +1,14 @@
 import { useState, useMemo } from 'react'
 import { useCRM } from '../context/CRMContext'
 import { STAGES, METODOS_PROSPECCION, PROBABILIDADES } from '../config'
-import { Search, Filter, Phone, Mail, ChevronDown, X, ArrowUpDown } from 'lucide-react'
+import { Search, Filter, Phone, Mail, ChevronDown, X, ArrowUpDown, Briefcase } from 'lucide-react'
 
 export default function Opportunities() {
-  const { opportunities, loading, openEdit } = useCRM()
+  const { opportunities, loading, openEdit, cartera, openCartPromptForOpp } = useCRM()
+  const importedRows = useMemo(
+    () => new Set((cartera || []).map(c => c.idOrigenPipeline).filter(Boolean)),
+    [cartera]
+  )
   const [search, setSearch] = useState('')
   const [filterStage, setFilterStage] = useState('')
   const [filterMethod, setFilterMethod] = useState('')
@@ -216,7 +220,7 @@ export default function Opportunities() {
                     </td>
                     <td className="px-4 py-3 text-slate-500 text-xs">{opp.fechaActualizacion}</td>
                     <td className="px-4 py-3">
-                      <div className="flex gap-1">
+                      <div className="flex gap-1 items-center">
                         {opp.whatsapp && (
                           <a
                             href={`https://wa.me/${opp.whatsapp.replace(/[^0-9]/g, '')}`}
@@ -236,6 +240,20 @@ export default function Opportunities() {
                           >
                             <Mail size={14} />
                           </a>
+                        )}
+                        {opp.estadoActual === 'Cerrado Ganado' && !importedRows.has(opp.row) && (
+                          <button
+                            type="button"
+                            onClick={e => {
+                              e.stopPropagation()
+                              openCartPromptForOpp(opp)
+                            }}
+                            title="Agregar a Cartera"
+                            className="flex items-center gap-1 px-2 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-[10px] font-semibold hover:bg-emerald-100 transition-colors"
+                          >
+                            <Briefcase size={12} />
+                            Cartera
+                          </button>
                         )}
                       </div>
                     </td>
@@ -276,6 +294,19 @@ export default function Opportunities() {
               </div>
               {opp.notas && (
                 <p className="text-xs text-slate-400 mt-2 line-clamp-1">{opp.notas}</p>
+              )}
+              {opp.estadoActual === 'Cerrado Ganado' && !importedRows.has(opp.row) && (
+                <button
+                  type="button"
+                  onClick={e => {
+                    e.stopPropagation()
+                    openCartPromptForOpp(opp)
+                  }}
+                  className="mt-3 w-full flex items-center justify-center gap-1 py-2 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-semibold hover:bg-emerald-100 transition-colors"
+                >
+                  <Briefcase size={12} />
+                  → Cartera
+                </button>
               )}
             </div>
           )

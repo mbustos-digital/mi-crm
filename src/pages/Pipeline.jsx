@@ -6,7 +6,7 @@ import {
   estaInactiva,
   CLOSED_STAGES,
 } from '../config'
-import { GripVertical, DollarSign, Building2, Clock, AlertTriangle, CalendarClock } from 'lucide-react'
+import { GripVertical, DollarSign, Building2, Clock, AlertTriangle, CalendarClock, Briefcase } from 'lucide-react'
 
 // ============================================================
 // OpportunityCard — KanbanCard compacta, muestra:
@@ -23,10 +23,11 @@ const TIPO_PROGRAMA_COLORS = {
   Empresarial:  { bg: '#fef3c7', color: '#b45309' },
 }
 
-function OpportunityCard({ opp, onEdit }) {
+function OpportunityCard({ opp, onEdit, onImportCartera, alreadyImported }) {
   const edad = getEdadDias(opp)
   const inactiva = estaInactiva(opp)
   const tipoColor = TIPO_PROGRAMA_COLORS[opp.tipoPrograma]
+  const showCarteraBtn = opp.estadoActual === 'Cerrado Ganado' && !alreadyImported
 
   return (
     <div
@@ -96,13 +97,33 @@ function OpportunityCard({ opp, onEdit }) {
           </span>
         )}
       </div>
+
+      {/* Botón → Cartera (solo en Cerrado Ganado no importados) */}
+      {showCarteraBtn && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            onImportCartera?.(opp)
+          }}
+          className="mt-2 w-full flex items-center justify-center gap-1 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-[10px] font-semibold hover:bg-emerald-100 transition-colors"
+        >
+          <Briefcase size={11} />
+          → Cartera
+        </button>
+      )}
     </div>
   )
 }
 
 export default function Pipeline() {
-  const { opportunities, loading, openEdit, handleStageChange } = useCRM()
+  const { opportunities, loading, openEdit, handleStageChange, cartera, openCartPromptForOpp } = useCRM()
   const [dragOverStage, setDragOverStage] = useState(null)
+
+  // Set de row-ids ya importados a cartera (vía idOrigenPipeline)
+  const importedRows = new Set(
+    (cartera || []).map(c => c.idOrigenPipeline).filter(Boolean)
+  )
 
   if (loading) {
     return (
@@ -186,6 +207,8 @@ export default function Pipeline() {
                       key={opp.row}
                       opp={opp}
                       onEdit={openEdit}
+                      onImportCartera={openCartPromptForOpp}
+                      alreadyImported={importedRows.has(opp.row)}
                     />
                   ))
                 )}

@@ -221,6 +221,14 @@ export function CRMProvider({ children }) {
 
   const dismissCartPrompt = () => setCartPrompt(null)
 
+  // Abre el CartPromptModal manualmente para una opp existente en
+  // Cerrado Ganado. Usado por los botones "→ Cartera" en Pipeline/Lista
+  // y por la sección de importables del empty state de Cartera.
+  const openCartPromptForOpp = (opp) => {
+    if (!opp) return
+    setCartPrompt({ opp })
+  }
+
   // Construye cliente desde opp y lo agrega a cartera.
   // - tipoPrograma / empresa / contacto: del opp
   // - semanasPrograma: usa el default de settings según tipoPrograma
@@ -310,6 +318,7 @@ export function CRMProvider({ children }) {
     // Cart prompt
     dismissCartPrompt,
     confirmAddToCartera,
+    openCartPromptForOpp,
   }
 
   return <CRMContext.Provider value={value}>{children}</CRMContext.Provider>
