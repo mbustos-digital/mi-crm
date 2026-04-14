@@ -174,6 +174,12 @@ export const SETTINGS_DEFAULTS = {
   semanasEmpresarialDefault: 16,
 }
 
+// Formatea Date → "dd/mm/yyyy". '' si inválida.
+export function formatFecha(d) {
+  if (!d || !(d instanceof Date) || isNaN(d.getTime())) return ''
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
+}
+
 // Devuelve la semana actual del programa (1-indexed).
 // Ej: si hoy es día 15 desde fechaInicio, semana = ceil(15/7) = 3.
 // Clamped a [1, semanasPrograma]; null si no hay fechaInicio.
@@ -183,6 +189,17 @@ export function getSemanaActual(cliente) {
   const total = parseFloat(cliente.semanasPrograma) || 0
   const semana = Math.max(1, Math.floor(dias / 7) + 1)
   return total > 0 ? Math.min(semana, total) : semana
+}
+
+// Fecha estimada de graduación: fechaInicio + semanasPrograma * 7 días.
+// Retorna Date o null si faltan datos.
+export function getFechaGraduacionEstimada(cliente) {
+  const inicio = parseDate(cliente.fechaInicio)
+  const semanas = parseFloat(cliente.semanasPrograma) || 0
+  if (!inicio || semanas <= 0) return null
+  const d = new Date(inicio)
+  d.setDate(d.getDate() + Math.round(semanas * 7))
+  return d
 }
 
 // Progreso en porcentaje [0, 100]. null si no hay datos.

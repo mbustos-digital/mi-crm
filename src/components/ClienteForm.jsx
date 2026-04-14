@@ -1,7 +1,14 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useCRM } from '../context/CRMContext'
-import { ESTADOS_CARTERA, TIPOS_PROGRAMA } from '../config'
-import { X, Save, Trash2, MessageCircle, Phone } from 'lucide-react'
+import {
+  ESTADOS_CARTERA,
+  TIPOS_PROGRAMA,
+  getSemanaActual,
+  getProgresoPrograma,
+  getFechaGraduacionEstimada,
+  formatFecha,
+} from '../config'
+import { X, Save, Trash2, MessageCircle, Phone, CalendarClock } from 'lucide-react'
 
 // ============================================================
 // ClienteForm — modal para crear/editar un cliente de Cartera.
@@ -71,6 +78,23 @@ export default function ClienteForm() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
+
+  // Timeline del programa — calculado en vivo desde form state.
+  // Null si falta fechaInicio o semanas. Usa los mismos helpers que las
+  // cards de /cartera para consistencia.
+  const timeline = useMemo(() => {
+    const semanas = parseFloat(form.semanasPrograma) || 0
+    if (!form.fechaInicio || semanas <= 0) return null
+    const semana = getSemanaActual(form)
+    const progreso = getProgresoPrograma(form) ?? 0
+    const fechaGrad = getFechaGraduacionEstimada(form)
+    return {
+      semana,
+      totalSemanas: semanas,
+      progreso,
+      fechaGraduacionEstimada: fechaGrad ? formatFecha(fechaGrad) : '',
+    }
+  }, [form.fechaInicio, form.semanasPrograma])
 
   const set = (field, value) => setForm(f => ({ ...f, [field]: value }))
 
@@ -289,6 +313,41 @@ export default function ClienteForm() {
                 />
               </div>
             </div>
+
+            {/* Timeline calculado (read-only) — se muestra solo si hay fecha inicio + semanas */}
+            {timeline && (
+              <div className="bg-indigo-50/60 border border-indigo-100 rounded-xl p-4 mb-3">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <CalendarClock size={14} className="text-indigo-600" />
+                    <span className="text-xs font-semibold text-indigo-700 uppercase tracking-wide">
+                      Timeline del programa
+                    </span>
+                  </div>
+                  <span className="text-xs font-semibold text-indigo-600">{timeline.progreso}%</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-0.5">Semana actual</div>
+                    <div className="text-sm font-semibold text-slate-800">
+                      {timeline.semana} <span className="text-slate-400 font-normal">de {timeline.totalSemanas}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-0.5">Graduación estimada</div>
+                    <div className="text-sm font-semibold text-slate-800">
+                      {timeline.fechaGraduacionEstimada || '—'}
+                    </div>
+                  </div>
+                </div>
+                <div className="h-1.5 bg-indigo-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-indigo-500 rounded-full transition-all duration-300"
+                    style={{ width: `${timeline.progreso}%` }}
+                  />
+                </div>
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Fecha Graduación Real</label>
