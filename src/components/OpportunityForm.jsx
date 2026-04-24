@@ -60,6 +60,7 @@ export default function OpportunityForm() {
     handleAdd,
     handleUpdate,
     handleDelete,
+    settings,
   } = useCRM()
 
   const isEditing = !!editingOpp && editingOpp.row != null
@@ -112,6 +113,45 @@ export default function OpportunityForm() {
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   const set = (field, value) => setForm(f => ({ ...f, [field]: value }))
+
+  // ----- Auto-sync de campos de dinero -----
+  //
+  // REGLA 1 — monto = precioPrograma − descuentoAplicado
+  //   Se recalcula cada vez que cambia precio o descuento. Si ambos están
+  //   vacíos no hace nada (respeta el monto manual que ya tenga el form).
+  //
+  // REGLA 2 — precioPrograma default según tipoPrograma
+  //   Al elegir "Ejecutivo" o "Empresarial", si el precio está vacío, se
+  //   llena con el default de settings (precioEjecutivoDefault /
+  //   precioEmpresarialDefault). Si el usuario ya escribió un precio, no
+  //   se sobrescribe.
+  useEffect(() => {
+    const precioStr = form.precioPrograma
+    const descuentoStr = form.descuentoAplicado
+    // Si NO hay precio definido, no tocamos monto (permite entrada manual
+    // directa de monto en oportunidades legacy sin precio).
+    if (precioStr === '' || precioStr == null) return
+    const precio = parseFloat(precioStr) || 0
+    const descuento = parseFloat(descuentoStr) || 0
+    const calculado = Math.max(0, precio - descuento)
+    setForm(f => (f.monto === calculado ? f : { ...f, monto: calculado }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.precioPrograma, form.descuentoAplicado])
+
+  useEffect(() => {
+    if (!form.tipoPrograma) return
+    if (form.precioPrograma !== '' && form.precioPrograma != null) return
+    const def =
+      form.tipoPrograma === 'Empresarial'
+        ? settings?.precioEmpresarialDefault
+        : form.tipoPrograma === 'Ejecutivo'
+          ? settings?.precioEjecutivoDefault
+          : null
+    if (def != null) {
+      setForm(f => (f.precioPrograma === '' || f.precioPrograma == null ? { ...f, precioPrograma: def } : f))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.tipoPrograma])
 
   // ----- Submit -----
   const handleSubmit = async (e) => {
@@ -298,14 +338,18 @@ export default function OpportunityForm() {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1.5">Monto ($)</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            Monto ($)
+            <span className="ml-1 text-[10px] font-normal text-slate-400">· auto</span>
+          </label>
           <input
             type="number"
             value={form.monto}
             onChange={e => set('monto', e.target.value)}
-            className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            className="w-full px-4 py-2.5 bg-slate-100 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             min="0"
             step="100"
+            title="Se calcula automáticamente como Precio Programa − Descuento. Puedes sobrescribir manualmente si es necesario."
           />
         </div>
       </div>
@@ -324,7 +368,16 @@ export default function OpportunityForm() {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1.5">Precio Programa ($)</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            Precio Programa ($)
+            {form.tipoPrograma && settings && (
+              <span className="ml-1 text-[10px] font-normal text-slate-400">
+                · default {form.tipoPrograma === 'Empresarial'
+                  ? settings.precioEmpresarialDefault?.toLocaleString('es-MX')
+                  : settings.precioEjecutivoDefault?.toLocaleString('es-MX')}
+              </span>
+            )}
+          </label>
           <input
             type="number"
             value={form.precioPrograma}
@@ -332,6 +385,11 @@ export default function OpportunityForm() {
             className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             min="0"
             step="100"
+            placeholder={form.tipoPrograma && settings
+              ? (form.tipoPrograma === 'Empresarial'
+                ? String(settings.precioEmpresarialDefault ?? '')
+                : String(settings.precioEjecutivoDefault ?? ''))
+              : ''}
           />
         </div>
         <div>
