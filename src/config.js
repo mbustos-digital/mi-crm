@@ -87,7 +87,10 @@ export const PROBABILIDADES = [
   'Bajo',
 ]
 
-export const POTENCIALES = ['A', 'B', 'C']
+// Potencial del prospecto: A = alto (decisor claro, presupuesto, urgencia),
+// B = medio (interés pero falta uno de los tres). Alineado con la validación
+// de datos en Google Sheets (columna I del tab Pipeline).
+export const POTENCIALES = ['A', 'B']
 
 // ============================================================
 // HELPERS — fechas y métricas derivadas de oportunidades
