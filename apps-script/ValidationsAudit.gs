@@ -1,5 +1,5 @@
 // ============================================================
-// VALIDATIONS AUDIT — Pipeline tab
+// VALIDATIONS AUDIT — Pipeline tab (standalone)
 // ============================================================
 //
 // Compara las reglas de data validation de cada columna con
@@ -7,18 +7,21 @@
 // Sirve para detectar mismatches del tipo "frontend permite C
 // pero el Sheet rechaza todo lo que no sea A o B".
 //
-// USO:
-//   1) Copia este archivo completo como nuevo .gs en el proyecto
-//      Apps Script del CRM.
-//   2) En el menú "Ejecutar", elige auditValidations y corre.
-//   3) Abre "Ver > Registros de ejecución" (o Executions → Logs)
-//      para leer el reporte.
-//   4) Si todo OK: listo. Si hay diferencias y aceptas las que
-//      propone fixValidations, corre fixValidations UNA vez.
-//
-// Requiere que SHEET_ID y PIPELINE_TAB estén definidos en el
-// mismo proyecto (vienen de Code.v2.gs).
+// USO (standalone — no requiere Code.v2.gs):
+//   1) Ve a https://script.google.com
+//   2) Clic en "+ Nuevo proyecto"
+//   3) Borra el contenido default, pega este archivo entero
+//   4) Guarda (Cmd+S) — ponle nombre "CRM Validations Audit"
+//   5) Menú desplegable arriba: elige auditValidations
+//   6) Clic Run (▶️). Autoriza permisos la primera vez.
+//   7) Ve al icono ⌚ Executions del sidebar izq → clic en la
+//      última ejecución → ve los Logs.
 // ============================================================
+
+// --- Constantes standalone ---
+const SHEET_ID_AUDIT = '1Zoh1CIvUZIQa--5GYHWw4SaMAD9co19waAxS5Hr5_yE'
+const PIPELINE_TAB_AUDIT = 'Versión Dueño de negocio'
+const PIPELINE_DATA_START_ROW_AUDIT = 4
 
 // Valores esperados — DEBEN coincidir con src/config.js del frontend.
 // Si cambias estos, recuerda actualizar config.js también.
@@ -76,7 +79,7 @@ const EXPECTED_VALIDATIONS = [
  * Retorna la lista de valores permitidos o null si no hay regla LIST_OF_VALUES.
  */
 function getValidationValues(sheet, colIndex) {
-  const cell = sheet.getRange(PIPELINE_DATA_START_ROW, colIndex, 1, 1)
+  const cell = sheet.getRange(PIPELINE_DATA_START_ROW_AUDIT, colIndex, 1, 1)
   const rule = cell.getDataValidation()
   if (!rule) return null
   const criteria = rule.getCriteriaType()
@@ -109,15 +112,15 @@ function diffSets(expected, actual) {
  * Solo reporta, NO modifica nada.
  */
 function auditValidations() {
-  const ss = SpreadsheetApp.openById(SHEET_ID)
-  const sheet = ss.getSheetByName(PIPELINE_TAB)
+  const ss = SpreadsheetApp.openById(SHEET_ID_AUDIT)
+  const sheet = ss.getSheetByName(PIPELINE_TAB_AUDIT)
   if (!sheet) {
-    Logger.log('❌ No se encontró tab: ' + PIPELINE_TAB)
+    Logger.log('❌ No se encontró tab: ' + PIPELINE_TAB_AUDIT)
     return
   }
 
   Logger.log('═══════════════════════════════════════════')
-  Logger.log('AUDIT de validaciones — tab: ' + PIPELINE_TAB)
+  Logger.log('AUDIT de validaciones — tab: ' + PIPELINE_TAB_AUDIT)
   Logger.log('═══════════════════════════════════════════')
 
   let okCount = 0
@@ -167,25 +170,25 @@ function auditValidations() {
  * regla de validación.
  */
 function fixValidations() {
-  const ss = SpreadsheetApp.openById(SHEET_ID)
-  const sheet = ss.getSheetByName(PIPELINE_TAB)
+  const ss = SpreadsheetApp.openById(SHEET_ID_AUDIT)
+  const sheet = ss.getSheetByName(PIPELINE_TAB_AUDIT)
   if (!sheet) {
-    Logger.log('❌ No se encontró tab: ' + PIPELINE_TAB)
+    Logger.log('❌ No se encontró tab: ' + PIPELINE_TAB_AUDIT)
     return
   }
 
-  const lastRow = Math.max(sheet.getLastRow(), PIPELINE_DATA_START_ROW)
+  const lastRow = Math.max(sheet.getLastRow(), PIPELINE_DATA_START_ROW_AUDIT)
   const bufferRows = 200
-  const numRows = lastRow - PIPELINE_DATA_START_ROW + 1 + bufferRows
+  const numRows = lastRow - PIPELINE_DATA_START_ROW_AUDIT + 1 + bufferRows
 
   Logger.log('═══════════════════════════════════════════')
-  Logger.log('FIX de validaciones — tab: ' + PIPELINE_TAB)
-  Logger.log(`Rango: fila ${PIPELINE_DATA_START_ROW} a ${PIPELINE_DATA_START_ROW + numRows - 1}`)
+  Logger.log('FIX de validaciones — tab: ' + PIPELINE_TAB_AUDIT)
+  Logger.log(`Rango: fila ${PIPELINE_DATA_START_ROW_AUDIT} a ${PIPELINE_DATA_START_ROW_AUDIT + numRows - 1}`)
   Logger.log('═══════════════════════════════════════════')
 
   for (const cfg of EXPECTED_VALIDATIONS) {
     const letter = columnToLetter_(cfg.col)
-    const range = sheet.getRange(PIPELINE_DATA_START_ROW, cfg.col, numRows, 1)
+    const range = sheet.getRange(PIPELINE_DATA_START_ROW_AUDIT, cfg.col, numRows, 1)
     const rule = SpreadsheetApp.newDataValidation()
       .requireValueInList(cfg.values, true) // true = mostrar dropdown
       .setAllowInvalid(true) // advertir, no bloquear (permite blanco)
