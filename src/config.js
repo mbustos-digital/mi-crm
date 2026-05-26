@@ -18,10 +18,14 @@ export const STAGES = [
   { id: 'J2 Realizada',    label: 'J2 Realizada',    color: '#d946ef', bg: '#fdf4ff' },
   { id: 'Cerrado Ganado',  label: 'Cerrado Ganado',  color: '#10b981', bg: '#ecfdf5' },
   { id: 'Cerrado Perdido', label: 'Cerrado Perdido', color: '#64748b', bg: '#f1f5f9' },
+  { id: 'No Show',         label: 'No Show',         color: '#f59e0b', bg: '#fffbeb' },
 ]
 
-// Stages "cerrados" — no entran en pipeline ponderado ni alertas de actividad
-export const CLOSED_STAGES = new Set(['Cerrado Ganado', 'Cerrado Perdido'])
+// Stages "cerrados" — no entran en pipeline ponderado ni alertas de actividad.
+// "No Show" (agendó y no llegó) se trata como cerrado para forecast (no infla
+// pipeline ni % bateo), pero tiene columna propia para triage: re-agendar
+// (mover a Agendado) o dar por perdido (mover a Cerrado Perdido).
+export const CLOSED_STAGES = new Set(['Cerrado Ganado', 'Cerrado Perdido', 'No Show'])
 
 // ============================================================
 // RAZONES DE PÉRDIDA (obligatorias al mover a Cerrado Perdido)
@@ -47,6 +51,7 @@ export const PROBABILIDADES_PONDERADAS = {
   'J2 Realizada':    0.85,
   'Cerrado Ganado':  1.00,
   'Cerrado Perdido': 0.00,
+  'No Show':         0.00,
 }
 
 // ============================================================
@@ -67,6 +72,7 @@ export const DIAS_INACTIVIDAD_POR_ETAPA = {
   'J2 Realizada':   14,
   'Cerrado Ganado':  null,
   'Cerrado Perdido': null,
+  'No Show':         null,
 }
 
 // ============================================================

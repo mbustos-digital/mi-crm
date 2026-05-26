@@ -42,6 +42,7 @@ const EXPECTED_VALIDATIONS = [
       'J2 Realizada',
       'Cerrado Ganado',
       'Cerrado Perdido',
+      'No Show',
     ],
   },
   {
