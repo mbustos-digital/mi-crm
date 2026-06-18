@@ -2,11 +2,11 @@
 // CONFIGURACIÓN DEL CRM
 // ============================================================
 //
-// URL del Apps Script desplegado (backend de Google Sheets).
-// Si cambia la implementación, actualizar también en api/proxy.js.
+// La URL del Apps Script vive como variable de entorno server-side
+// (APPS_SCRIPT_URL en Vercel). El frontend nunca la conoce directamente
+// — toda comunicación pasa por /api/proxy.
+// Ver api/proxy.js y .env.example.
 //
-export const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby_23_qeSIefcroRVovHosH68fccOWudjyhEEMQ9urQEwyDDY4OqyKHM19OK9fwlNUJiQ/exec'
-
 // ============================================================
 // ETAPAS DEL PIPELINE (7 etapas)
 // ============================================================

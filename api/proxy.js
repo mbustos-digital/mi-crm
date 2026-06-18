@@ -1,4 +1,7 @@
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby_23_qeSIefcroRVovHosH68fccOWudjyhEEMQ9urQEwyDDY4OqyKHM19OK9fwlNUJiQ/exec'
+// URL del Apps Script desplegado. Se inyecta como variable de entorno
+// en Vercel (Settings → Environment Variables → APPS_SCRIPT_URL).
+// Para desarrollo local con `vercel dev`, se lee de .env.local.
+const APPS_SCRIPT_URL = process.env.APPS_SCRIPT_URL
 
 // Extrae el mensaje útil de una respuesta HTML de error de Google Apps Script.
 // Las páginas de error típicas traen el mensaje real dentro de <pre>, <div id="error"> o
@@ -33,6 +36,12 @@ function extractErrorFromHtml(html) {
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store')
+
+  if (!APPS_SCRIPT_URL) {
+    return res.status(500).json({
+      error: 'APPS_SCRIPT_URL no está configurada en las variables de entorno de Vercel',
+    })
+  }
 
   try {
     if (req.method === 'POST') {

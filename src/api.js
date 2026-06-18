@@ -2,17 +2,13 @@
 // API — capa de acceso al backend (Apps Script vía proxy Vercel)
 // ============================================================
 //
-// En producción usa el proxy de Vercel (api/proxy.js) para evitar
-// problemas de iOS Safari con redirects de Google. En desarrollo
-// llama directo al Apps Script.
-//
-// NO hay fallback a datos mock: si no hay conexión, se propaga el
-// error al caller (CRMContext muestra mensaje claro al usuario).
+// Toda comunicación con Google Sheets pasa por el proxy server-side
+// /api/proxy (Vercel Function). La URL real del Apps Script vive
+// únicamente como variable de entorno en Vercel (APPS_SCRIPT_URL),
+// nunca en el bundle público del frontend.
 //
 // Soporta 3 sheets: pipeline (default), cartera, settings.
 // ============================================================
-
-import { APPS_SCRIPT_URL } from './config'
 
 // ------------------------------------------------------------
 // Cache en localStorage — mitiga latencia Apps Script
@@ -64,16 +60,16 @@ export function clearAllCaches() {
 }
 
 // ------------------------------------------------------------
-// Transporte — proxy Vercel en prod, directo en dev
+// Transporte — siempre vía /api/proxy (server-side Vercel)
 // ------------------------------------------------------------
-const useProxy = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+const PROXY_URL = '/api/proxy'
 
 async function callAppsScript({ action, sheet = 'pipeline', payload = null }) {
   // POST: para operaciones con payload (add/update/delete).
   // Evita problemas de encoding en URL y límites de longitud.
-  if (useProxy && payload) {
+  if (payload) {
     const payloadObj = typeof payload === 'string' ? JSON.parse(payload) : payload
-    const res = await fetch('/api/proxy', {
+    const res = await fetch(PROXY_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sheet, action, payload: payloadObj }),
@@ -85,9 +81,8 @@ async function callAppsScript({ action, sheet = 'pipeline', payload = null }) {
 
   // GET: para getAll y operaciones sin payload.
   // Timestamp para cache-busting (navegador/CDN).
-  const baseUrl = useProxy ? '/api/proxy' : APPS_SCRIPT_URL
   const params = { sheet, action, _t: Date.now() }
-  const url = `${baseUrl}?${new URLSearchParams(params).toString()}`
+  const url = `${PROXY_URL}?${new URLSearchParams(params).toString()}`
   const res = await fetch(url, { cache: 'no-store' })
   const data = await res.json()
   if (data.error) throw new Error(data.error)
